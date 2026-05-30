@@ -10,22 +10,24 @@
             --secondary: #3b82f6;
             --bg: #f8fafc;
             --text: #1e293b;
+            --success: #059669;
+            --danger: #dc2626;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
         body { background-color: var(--bg); color: var(--text); padding: 15px; display: flex; justify-content: center; min-height: 100vh; align-items: center; }
         
-        .container { width: 100%; max-width: 650px; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .container { width: 100%; max-width: 650px; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); position: relative; }
         .header { text-align: center; border-bottom: 3px double var(--primary); padding-bottom: 12px; margin-bottom: 20px; }
         .header h2 { color: var(--primary); font-size: 1.3rem; }
         .header p { font-size: 0.85rem; color: #64748b; }
 
-        /* Form Login */
+        /* Form Controls */
         .form-group { margin-bottom: 15px; text-align: left; }
         .form-group label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 0.9rem; }
         .form-control { width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 1rem; }
         
-        /* Soal */
+        /* Soal & Opsi */
         .question { font-size: 1.1rem; font-weight: 600; margin-bottom: 15px; line-height: 1.5; }
         .options { display: flex; flex-direction: column; gap: 10px; }
         .option-btn { 
@@ -34,11 +36,20 @@
         }
         .option-btn.selected { background: #dbeafe; border-color: var(--secondary); color: var(--primary); font-weight: bold; }
 
-        .btn-block { width: 100%; background: var(--primary); color: white; border: none; padding: 12px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: bold; margin-top: 15px; }
-        .btn-block:hover { background: #172554; }
+        /* Buttons */
+        .btn { padding: 10px 15px; border-radius: 8px; border: none; font-size: 1rem; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: #172554; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-block { width: 100%; padding: 12px; margin-top: 15px; display: block; text-align: center; text-decoration: none; }
 
         .penalty-alert { display: none; background: #fee2e2; color: #991b1b; padding: 10px; border-radius: 6px; margin-bottom: 15px; font-weight: bold; text-align: center; font-size: 0.85rem; }
         
+        /* List Items Admin */
+        .item-list { list-style: none; margin-top: 10px; }
+        .item-list li { display: flex; justify-content: space-between; align-items: center; background: #f8fafc; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 6px; margin-bottom: 5px; }
+
         /* Cetak Hasil */
         .print-area { display: none; text-align: left; }
         .print-table { width: 100%; border-collapse: collapse; margin: 15px 0; }
@@ -46,10 +57,11 @@
         .print-table th { background: #f1f5f9; }
         .ttd-container { display: flex; justify-content: space-between; margin-top: 40px; text-align: center; }
 
-        /* CSS khusus saat Cetak Kertas */
+        .btn-admin-nav { position: absolute; top: 15px; right: 15px; font-size: 0.8rem; padding: 5px 10px; background: #cbd5e1; color: #334155; border-radius: 5px; cursor: pointer; border: none; }
+
         @media print {
             body { background: white; padding: 0; color: black; }
-            .container { box-shadow: none; max-width: 100%; padding: 0; }
+            .container { box-shadow: none; max-width: 100%; padding: 0; position: static; }
             .no-print { display: none !important; }
             .print-area { display: block !important; }
         }
@@ -58,23 +70,22 @@
 <body>
 
 <div class="container">
-    <!-- Header Sekolah -->
+    <button id="btnNavAdmin" class="btn-admin-nav no-print" onclick="aksesPanelGuru()">Menu Guru</button>
+
     <div class="header">
         <h2>ASESMEN SUMATIF SEMESTER</h2>
         <h3>SDN NEGERI TUMBANG KORIK</h3>
-        <p>NPSN: 30102352 | Jl. Lintas Tumbang Korik</p>
+        <p>NPSN: 30102352 | Muatan Lokal: B. Daerah Dayak Ngaju</p>
     </div>
 
-    <!-- Peringatan Kecurangan -->
     <div id="penaltyNotice" class="penalty-alert">
         ⚠️ KAMU KELUAR APLIKASI! Penalti: 2 jawaban sebelumnya telah di-reset!
     </div>
 
-    <!-- HALAMAN 1: LOGIN SISWA -->
     <div id="loginPage">
         <div class="form-group">
             <label>Nama Lengkap Siswa</label>
-            <input type="text" id="siswaNama" class="form-control" placeholder="Masukkan nama lengkap...">
+            <input type="text" id="siswaNama" class="form-control" placeholder="Masukkan nama lengkap siswa...">
         </div>
         <div class="form-group">
             <label>Pilih Kelas</label>
@@ -94,18 +105,70 @@
                 <option value="2">Semester 2 (Genap)</option>
             </select>
         </div>
-        <button class="btn-block" onclick="mulaiUjian()">Mulai Ujian</button>
+        <button class="btn btn-primary btn-block" onclick="mulaiUjian()">Mulai Ujian</button>
     </div>
 
-    <!-- HALAMAN 2: LAYAR UJIAN -->
     <div id="examPage" style="display: none;">
         <p id="infoSiswaUjian" style="font-size: 0.9rem; color: #64748b; margin-bottom: 15px; font-weight: bold;"></p>
         <div class="question" id="questionText">Memuat soal...</div>
         <div class="options" id="optionsContainer"></div>
-        <button class="btn-block" id="nextBtn" onclick="nextQuestion()">Berikutnya</button>
+        <button class="btn btn-primary btn-block" id="nextBtn" onclick="nextQuestion()">Berikutnya</button>
     </div>
 
-    <!-- HALAMAN 3: REKAP & CETAK HASIL (UNTUK GURU) -->
+    <div id="adminPage" style="display: none;" class="no-print">
+        <h3 style="color: var(--primary); margin-bottom: 15px; text-align: center;">PANEL KONTROL GURU</h3>
+        
+        <div style="border: 1px solid #e2e8f0; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+            <h4>1. Atur Mata Pelajaran</h4>
+            <div style="display: flex; gap: 5px; margin-top: 8px;">
+                <input type="text" id="txtNewMapel" class="form-control" placeholder="Ketik nama mata pelajaran baru...">
+                <button class="btn btn-success" onclick="tambahMapel()">Tambah</button>
+            </div>
+            <ul id="listMapel" class="item-list"></ul>
+        </div>
+
+        <div style="border: 1px solid #e2e8f0; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+            <h4>2. Buat & Input Soal</h4>
+            <div class="form-group" style="margin-top: 8px;">
+                <label>Pilih Mata Pelajaran</label>
+                <select id="selSoalMapel" class="form-control"></select>
+            </div>
+            <div class="form-group">
+                <label>Pilih Batasan Kelas</label>
+                <select id="selSoalKelas" class="form-control">
+                    <option value="semua">Semua Kelas (1-6)</option>
+                    <option value="3-6">Khusus Kelas 3, 4, 5, 6 (Misal: IPAS)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Pertanyaan / Soal</label>
+                <textarea id="txtSoalTeks" class="form-control" rows="2" placeholder="Tulis teks pertanyaan ujian..."></textarea>
+            </div>
+            <div class="form-group">
+                <label>Pilihan Jawaban</label>
+                <input type="text" id="txtOpsi0" class="form-control" placeholder="Pilihan A" style="margin-bottom: 5px;">
+                <input type="text" id="txtOpsi1" class="form-control" placeholder="Pilihan B" style="margin-bottom: 5px;">
+                <input type="text" id="txtOpsi2" class="form-control" placeholder="Pilihan C">
+            </div>
+            <div class="form-group">
+                <label>Kunci Jawaban Benar</label>
+                <select id="selKunci" class="form-control">
+                    <option value="0">Pilihan A</option>
+                    <option value="1">Pilihan B</option>
+                    <option value="2">Pilihan C</option>
+                </select>
+            </div>
+            <button class="btn btn-primary btn-block" onclick="simpanSoalBaru()">Simpan Pertanyaan</button>
+        </div>
+
+        <div style="border: 1px solid #e2e8f0; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+            <h4>Daftar Bank Soal Tersimpan (<span id="countSoal">0</span>)</h4>
+            <ul id="listSoal" class="item-list" style="max-height: 150px; overflow-y: auto;"></ul>
+        </div>
+
+        <button class="btn btn-danger btn-block" onclick="keluarPanelGuru()">Keluar & Kembali ke Ujian</button>
+    </div>
+
     <div id="resultPage" class="print-area">
         <h4 style="text-align: center; margin-bottom: 10px;">REKAPITULASI HASIL NILAI SISWA</h4>
         <p><strong>Nama Siswa :</strong> <span id="lblNama"></span></p>
@@ -119,12 +182,9 @@
                     <th>Status</th>
                 </tr>
             </thead>
-            <tbody id="resultTableBody">
-                <!-- Data Nilai Hasil Ujian Dimasukkan Disini -->
-            </tbody>
+            <tbody id="resultTableBody"></tbody>
         </table>
 
-        <!-- Kolom Tanda Tangan Sekolah -->
         <div class="ttd-container">
             <div>
                 Mengetahui,<br>
@@ -141,22 +201,30 @@
                 NIP. 
             </div>
         </div>
-        <button class="btn-block no-print" onclick="window.print()" style="background: #059669;">Cetak / Simpan PDF</button>
+        <button class="btn btn-success btn-block no-print" onclick="window.print()">Cetak Kertas / Simpan PDF</button>
+        <button class="btn btn-primary btn-block no-print" onclick="location.reload()" style="background:#64748b;">Kembali Ke Menu Utama</button>
     </div>
 </div>
 
 <script>
-    // Bank Soal Simulasi (Termasuk Muatan Lokal Dayak Ngaju)
-    const bankSoal = [
-        { mapel: "Pendidikan Agama dan Budi Pekerti", q: "Bagaimana sikap kita saat berdoa?", a: ["Bermain", "Khusyuk dan tenang", "Berbicara"], c: 1 },
-        { mapel: "Pendidikan Pancasila", q: "Sila pertama Pancasila dilambangkan dengan...", a: ["Pohon Beringin", "Bintang", "Rantai"], c: 1 },
-        { mapel: "Bahasa Indonesia", q: "Kalimat pembuka yang santun untuk bertanya adalah...", a: ["Permisi, boleh saya bertanya?", "Hei kamu sini!", "Mau kemana?"], c: 0 },
-        { mapel: "Matematika", q: "Hasil dari 12 + 15 adalah...", a: ["25", "27", "30"], c: 1 },
-        { mapel: "IPAS", q: "Bagian tumbuhan yang berfungsi menyerap air dari dalam tanah adalah...", a: ["Daun", "Batang", "Akar"], khususKelas3: true, c: 2 },
-        { mapel: "Seni dan Budaya", q: "Berikut yang termasuk alat musik pukul adalah...", a: ["Gendang", "Gitar", "Suling"], c: 0 },
-        { mapel: "PJOK", q: "Sebelum melakukan olahraga, kita sebaiknya melakukan...", a: ["Pemanasan", "Pendinginan", "Tidur"], c: 0 },
-        { mapel: "Muatan Lokal Bahasa Daerah", q: "Narai kabar? Arti dari kalimat bahasa Dayak Ngaju tersebut adalah...", a: ["Mau kemana?", "Apa kabar?", "Sudah makan?"], c: 1 }
+    // DATA DEFAULT SEBELUM DIUBAH GURU
+    const defaultMapel = [
+        "Pendidikan Agama dan Budi Pekerti", "Pendidikan Pancasila", 
+        "Bahasa Indonesia", "Matematika", "IPAS", 
+        "Seni dan Budaya", "PJOK", "Muatan Lokal Bahasa Daerah"
     ];
+
+    const defaultSoal = [
+        { mapel: "Pendidikan Pancasila", kelasRule: "semua", q: "Sila pertama Pancasila dilambangkan dengan...", a: ["Pohon Beringin", "Bintang", "Rantai"], c: 1 },
+        { mapel: "Bahasa Indonesia", q: "Kalimat pembuka yang santun untuk bertanya adalah...", a: ["Permisi, boleh saya bertanya?", "Hei sini!", "Mau kemana?"], kelasRule: "semua", c: 0 },
+        { mapel: "Matematika", q: "Hasil dari 12 + 15 adalah...", a: ["25", "27", "30"], kelasRule: "semua", c: 1 },
+        { mapel: "IPAS", q: "Bagian tumbuhan yang menyerap air di dalam tanah adalah...", a: ["Daun", "Batang", "Akar"], kelasRule: "3-6", c: 2 },
+        { mapel: "Muatan Lokal Bahasa Daerah", q: 'Arti dari kalimat Dayak Ngaju "Narai kabar?" adalah...', a: ["Mau kemana?", "Apa kabar?", "Sudah makan?"], kelasRule: "semua", c: 1 }
+    ];
+
+    // MEMUAT DATA DARI STORAGE BROWSER (AGAR PERUBAHAN GURU TIDAK HILANG)
+    let listMataPelajaran = JSON.parse(localStorage.getItem('mapel_sumatif')) || defaultMapel;
+    let bankSoal = JSON.parse(localStorage.getItem('soal_sumatif')) || defaultSoal;
 
     let dataSiswa = {};
     let soalAktif = [];
@@ -164,6 +232,97 @@
     let jawabanSiswa = {};
     let ujianMulai = false;
 
+    // FUNGSI NAVIGASI GURU
+    function aksesPanelGuru() {
+        let pass = prompt("Masukkan Kata Sandi Guru:");
+        if (pass === "guru123") {
+            document.getElementById('loginPage').style.display = 'none';
+            document.getElementById('examPage').style.display = 'none';
+            document.getElementById('resultPage').style.display = 'none';
+            document.getElementById('adminPage').style.display = 'block';
+            document.getElementById('btnNavAdmin').style.display = 'none';
+            renderAdminData();
+        } else {
+            alert("Kata sandi salah!");
+        }
+    }
+
+    function keluarPanelGuru() {
+        document.getElementById('adminPage').style.display = 'none';
+        document.getElementById('loginPage').style.display = 'block';
+        document.getElementById('btnNavAdmin').style.display = 'block';
+    }
+
+    // MANAJEMEN DATA OLEH GURU
+    function renderAdminData() {
+        // Render Dropdown Mapel saat bikin soal
+        const selMapel = document.getElementById('selSoalMapel');
+        selMapel.innerHTML = '';
+        listMataPelajaran.forEach(m => selMapel.innerHTML += `<option value="${m}">${m}</option>`);
+
+        // Render List Mapel
+        const ulMapel = document.getElementById('listMapel');
+        ulMapel.innerHTML = '';
+        listMataPelajaran.forEach((m, idx) => {
+            ulMapel.innerHTML += `<li>${m} <button class="btn btn-danger" style="padding:2px 6px; font-size:0.75rem;" onclick="hapusMapel(${idx})">Hapus</button></li>`;
+        });
+
+        // Render List Soal
+        document.getElementById('countSoal').innerText = bankSoal.length;
+        const ulSoal = document.getElementById('listSoal');
+        ulSoal.innerHTML = '';
+        bankSoal.forEach((s, idx) => {
+            ulSoal.innerHTML += `<li><small>[${s.mapel}] ${s.q.substring(0,25)}...</small> <button class="btn btn-danger" style="padding:2px 6px; font-size:0.75rem;" onclick="hapusSoal(${idx})">Hapus</button></li>`;
+        });
+    }
+
+    function tambahMapel() {
+        const text = document.getElementById('txtNewMapel').value.trim();
+        if(text) {
+            listMataPelajaran.push(text);
+            localStorage.setItem('mapel_sumatif', JSON.stringify(listMataPelajaran));
+            document.getElementById('txtNewMapel').value = '';
+            renderAdminData();
+        }
+    }
+
+    function hapusMapel(idx) {
+        listMataPelajaran.splice(idx, 1);
+        localStorage.setItem('mapel_sumatif', JSON.stringify(listMataPelajaran));
+        renderAdminData();
+    }
+
+    function simpanSoalBaru() {
+        const mapel = document.getElementById('selSoalMapel').value;
+        const kelasRule = document.getElementById('selSoalKelas').value;
+        const q = document.getElementById('txtSoalTeks').value.trim();
+        const a0 = document.getElementById('txtOpsi0').value.trim();
+        const a1 = document.getElementById('txtOpsi1').value.trim();
+        const a2 = document.getElementById('txtOpsi2').value.trim();
+        const c = parseInt(document.getElementById('selKunci').value);
+
+        if(!q || !a0 || !a1 || !a2) { alert("Semua form pembuatan soal wajib diisi!"); return; }
+
+        bankSoal.push({ mapel, kelasRule, q, a: [a0, a1, a2], c });
+        localStorage.setItem('soal_sumatif', JSON.stringify(bankSoal));
+        
+        // Reset form input
+        document.getElementById('txtSoalTeks').value = '';
+        document.getElementById('txtOpsi0').value = '';
+        document.getElementById('txtOpsi1').value = '';
+        document.getElementById('txtOpsi2').value = '';
+        
+        alert("Pertanyaan berhasil disimpan ke dalam bank soal!");
+        renderAdminData();
+    }
+
+    function hapusSoal(idx) {
+        bankSoal.splice(idx, 1);
+        localStorage.setItem('soal_sumatif', JSON.stringify(bankSoal));
+        renderAdminData();
+    }
+
+    // ALUR JALANNYA UJIAN SISWA
     function mulaiUjian() {
         const nama = document.getElementById('siswaNama').value;
         const kelas = document.getElementById('siswaKelas').value;
@@ -173,14 +332,20 @@
 
         dataSiswa = { nama, kelas, sem };
         
-        // Filter soal: Jika kelas 1 atau 2, hilangkan soal IPAS
+        // Filter soal otomatis berdasarkan aturan kelas yang dibuat guru
         soalAktif = bankSoal.filter(soal => {
-            if(soal.khususKelas3 && parseInt(kelas) < 3) return false;
+            if(soal.kelasRule === "3-6" && parseInt(kelas) < 3) return false;
             return true;
         });
 
+        if(soalAktif.length === 0) {
+            alert("Belum ada soal ujian yang tersedia untuk kelas ini. Sampaikan ke guru untuk membuat soal terlebih dahulu!");
+            return;
+        }
+
         document.getElementById('loginPage').style.display = 'none';
         document.getElementById('examPage').style.display = 'block';
+        document.getElementById('btnNavAdmin').style.display = 'none';
         document.getElementById('infoSiswaUjian').innerText = `Siswa: ${nama} | Kelas: ${kelas} | Semester: ${sem}`;
         
         ujianMulai = true;
@@ -194,7 +359,7 @@
         }
 
         const soal = soalAktif[indeksSoal];
-        document.getElementById('questionText').innerHTML = `<small style='color:var(--secondary); font-weight:bold;'>[${soal.mapel}]</small><br>${indeksSoal + 1}. ${soal.q}`;
+        document.getElementById('questionText').innerHTML = `<small style='color:var(--secondary); font-weight:bold;'>[Mata Pelajaran: ${soal.mapel}]</small><br>${indeksSoal + 1}. ${soal.q}`;
         
         const containerOpsi = document.getElementById('optionsContainer');
         containerOpsi.innerHTML = '';
@@ -210,7 +375,7 @@
 
     function nextQuestion() {
         if(jawabanSiswa[indeksSoal] === undefined) {
-            alert("Pilih salah satu jawaban terlebih dahulu!");
+            alert("Pilih salah satu jawaban terlebih dahulu sebelum menekan Berikutnya!");
             return;
         }
         indeksSoal++;
@@ -221,7 +386,6 @@
         ujianMulai = false;
         document.getElementById('examPage').style.display = 'none';
         
-        // Isi lembar cetak hasil
         document.getElementById('lblNama').innerText = dataSiswa.nama;
         document.getElementById('lblKelas').innerText = dataSiswa.kelas;
         document.getElementById('lblSem').innerText = dataSiswa.sem;
@@ -229,30 +393,45 @@
         const tbody = document.getElementById('resultTableBody');
         tbody.innerHTML = '';
 
-        // Hitung nilai per mapel (di simulasi ini 1 mapel = 1 soal, nilai 100 jika benar)
+        // Mengelompokkan nilai per Mata Pelajaran secara adil
+        let skorPerMapel = {};
+        let totalSoalPerMapel = {};
+
+        // Inisialisasi daftar mapel aktif
+        listMataPelajaran.forEach(m => { skorPerMapel[m] = 0; totalSoalPerMapel[m] = 0; });
+
         soalAktif.forEach((soal, i) => {
-            const nilai = jawabanSiswa[i] === soal.c ? 100 : 0;
-            const status = nilai >= 70 ? "<span style='color:green;font-weight:bold;'>Tuntas</span>" : "<span style='color:red;font-weight:bold;'>Remedial</span>";
-            
-            const tr = `<tr>
-                <td>${soal.mapel}</td>
-                <td>${nilai}</td>
-                <td>${status}</td>
-            </tr>`;
-            tbody.innerHTML += tr;
+            if(skorPerMapel[soal.mapel] === undefined) { skorPerMapel[soal.mapel] = 0; totalSoalPerMapel[soal.mapel] = 0; }
+            totalSoalPerMapel[soal.mapel]++;
+            if(jawabanSiswa[i] === soal.c) {
+                skorPerMapel[soal.mapel]++;
+            }
         });
 
-        // Tampilkan halaman cetak
+        // Tampilkan hasil rekap nilai ke tabel cetak
+        for (let mapel in totalSoalPerMapel) {
+            if(totalSoalPerMapel[mapel] > 0) {
+                let nilaiFinal = Math.round((skorPerMapel[mapel] / totalSoalPerMapel[mapel]) * 100);
+                let status = nilaiFinal >= 70 ? "<span style='color:green;font-weight:bold;'>Tuntas</span>" : "<span style='color:red;font-weight:bold;'>Remedial</span>";
+                
+                let tr = `<tr>
+                    <td>${mapel}</td>
+                    <td>${nilaiFinal}</td>
+                    <td>${status}</td>
+                </tr>`;
+                tbody.innerHTML += tr;
+            }
+        }
+
         document.getElementById('resultPage').style.display = 'block';
     }
 
-    // FITUR KEAMANAN: ANTI-MINIMIZE & CURANG
+    // FITUR ANTI CURANG (ANTI-MINIMIZE)
     window.addEventListener('blur', () => {
         if(!ujianMulai) return;
 
         document.getElementById('penaltyNotice').style.display = 'block';
         
-        // Penalti: Hapus 2 jawaban ke belakang
         let terhapus = 0;
         for (let i = indeksSoal; i >= 0; i--) {
             if (jawabanSiswa[i] !== undefined && terhapus < 2) {
@@ -261,11 +440,9 @@
             }
         }
         
-        // Mundurkan posisi soal agar siswa mengulang soal yang terhapus jwabannya
         indeksSoal = Math.max(0, indeksSoal - terhapus);
         tampilkanSoal();
 
-        // Hilangkan notifikasi penalti setelah 4 detik
         setTimeout(() => {
             document.getElementById('penaltyNotice').style.display = 'none';
         }, 4000);
