@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asesmen Sumatif - SDN Negeri Tumbang Korik</title>
+    <style>
+        :root {
+            --primary: #1e3a8a;
+            --secondary: #3b82f6;
+            --bg: #f8fafc;
+            --text: #1e293b;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+        body { background-color: var(--bg); color: var(--text); padding: 15px; display: flex; justify-content: center; min-height: 100vh; align-items: center; }
+        
+        .container { width: 100%; max-width: 650px; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .header { text-align: center; border-bottom: 3px double var(--primary); padding-bottom: 12px; margin-bottom: 20px; }
+        .header h2 { color: var(--primary); font-size: 1.3rem; }
+        .header p { font-size: 0.85rem; color: #64748b; }
+
+        /* Form Login */
+        .form-group { margin-bottom: 15px; text-align: left; }
+        .form-group label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 0.9rem; }
+        .form-control { width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 1rem; }
+        
+        /* Soal */
+        .question { font-size: 1.1rem; font-weight: 600; margin-bottom: 15px; line-height: 1.5; }
+        .options { display: flex; flex-direction: column; gap: 10px; }
+        .option-btn { 
+            background: #f1f5f9; border: 2px solid #e2e8f0; padding: 12px; 
+            border-radius: 8px; text-align: left; cursor: pointer; font-size: 1rem; transition: 0.2s;
+        }
+        .option-btn.selected { background: #dbeafe; border-color: var(--secondary); color: var(--primary); font-weight: bold; }
+
+        .btn-block { width: 100%; background: var(--primary); color: white; border: none; padding: 12px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: bold; margin-top: 15px; }
+        .btn-block:hover { background: #172554; }
+
+        .penalty-alert { display: none; background: #fee2e2; color: #991b1b; padding: 10px; border-radius: 6px; margin-bottom: 15px; font-weight: bold; text-align: center; font-size: 0.85rem; }
+        
+        /* Cetak Hasil */
+        .print-area { display: none; text-align: left; }
+        .print-table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        .print-table th, .print-table td { border: 1px solid #cbd5e1; padding: 10px; text-align: left; }
+        .print-table th { background: #f1f5f9; }
+        .ttd-container { display: flex; justify-content: space-between; margin-top: 40px; text-align: center; }
+
+        /* CSS khusus saat Cetak Kertas */
+        @media print {
+            body { background: white; padding: 0; color: black; }
+            .container { box-shadow: none; max-width: 100%; padding: 0; }
+            .no-print { display: none !important; }
+            .print-area { display: block !important; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Header Sekolah -->
+    <div class="header">
+        <h2>ASESMEN SUMATIF SEMESTER</h2>
+        <h3>SDN NEGERI TUMBANG KORIK</h3>
+        <p>NPSN: 30102352 | Jl. Lintas Tumbang Korik</p>
+    </div>
+
+    <!-- Peringatan Kecurangan -->
+    <div id="penaltyNotice" class="penalty-alert">
+        ⚠️ KAMU KELUAR APLIKASI! Penalti: 2 jawaban sebelumnya telah di-reset!
+    </div>
+
+    <!-- HALAMAN 1: LOGIN SISWA -->
+    <div id="loginPage">
+        <div class="form-group">
+            <label>Nama Lengkap Siswa</label>
+            <input type="text" id="siswaNama" class="form-control" placeholder="Masukkan nama lengkap...">
+        </div>
+        <div class="form-group">
+            <label>Pilih Kelas</label>
+            <select id="siswaKelas" class="form-control">
+                <option value="1">Kelas 1</option>
+                <option value="2">Kelas 2</option>
+                <option value="3">Kelas 3</option>
+                <option value="4">Kelas 4</option>
+                <option value="5">Kelas 5</option>
+                <option value="6">Kelas 6</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Pilih Semester</label>
+            <select id="ujianSemester" class="form-control">
+                <option value="1">Semester 1 (Ganjil)</option>
+                <option value="2">Semester 2 (Genap)</option>
+            </select>
+        </div>
+        <button class="btn-block" onclick="mulaiUjian()">Mulai Ujian</button>
+    </div>
+
+    <!-- HALAMAN 2: LAYAR UJIAN -->
+    <div id="examPage" style="display: none;">
+        <p id="infoSiswaUjian" style="font-size: 0.9rem; color: #64748b; margin-bottom: 15px; font-weight: bold;"></p>
+        <div class="question" id="questionText">Memuat soal...</div>
+        <div class="options" id="optionsContainer"></div>
+        <button class="btn-block" id="nextBtn" onclick="nextQuestion()">Berikutnya</button>
+    </div>
+
+    <!-- HALAMAN 3: REKAP & CETAK HASIL (UNTUK GURU) -->
+    <div id="resultPage" class="print-area">
+        <h4 style="text-align: center; margin-bottom: 10px;">REKAPITULASI HASIL NILAI SISWA</h4>
+        <p><strong>Nama Siswa :</strong> <span id="lblNama"></span></p>
+        <p><strong>Kelas / Sem :</strong> Kelas <span id="lblKelas"></span> / Semester <span id="lblSem"></span></p>
+        
+        <table class="print-table">
+            <thead>
+                <tr>
+                    <th>Mata Pelajaran</th>
+                    <th>Nilai</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="resultTableBody">
+                <!-- Data Nilai Hasil Ujian Dimasukkan Disini -->
+            </tbody>
+        </table>
+
+        <!-- Kolom Tanda Tangan Sekolah -->
+        <div class="ttd-container">
+            <div>
+                Mengetahui,<br>
+                <strong>Kepala Sekolah SDN Tumbang Korik</strong>
+                <br><br><br><br>
+                <u>..................................................</u><br>
+                NIP. 
+            </div>
+            <div>
+                Tumbang Korik, ____________ 2026<br>
+                <strong>Wali Kelas</strong>
+                <br><br><br><br>
+                <u>..................................................</u><br>
+                NIP. 
+            </div>
+        </div>
+        <button class="btn-block no-print" onclick="window.print()" style="background: #059669;">Cetak / Simpan PDF</button>
+    </div>
+</div>
+
+<script>
+    // Bank Soal Simulasi (Termasuk Muatan Lokal Dayak Ngaju)
+    const bankSoal = [
+        { mapel: "Pendidikan Agama dan Budi Pekerti", q: "Bagaimana sikap kita saat berdoa?", a: ["Bermain", "Khusyuk dan tenang", "Berbicara"], c: 1 },
+        { mapel: "Pendidikan Pancasila", q: "Sila pertama Pancasila dilambangkan dengan...", a: ["Pohon Beringin", "Bintang", "Rantai"], c: 1 },
+        { mapel: "Bahasa Indonesia", q: "Kalimat pembuka yang santun untuk bertanya adalah...", a: ["Permisi, boleh saya bertanya?", "Hei kamu sini!", "Mau kemana?"], c: 0 },
+        { mapel: "Matematika", q: "Hasil dari 12 + 15 adalah...", a: ["25", "27", "30"], c: 1 },
+        { mapel: "IPAS", q: "Bagian tumbuhan yang berfungsi menyerap air dari dalam tanah adalah...", a: ["Daun", "Batang", "Akar"], khususKelas3: true, c: 2 },
+        { mapel: "Seni dan Budaya", q: "Berikut yang termasuk alat musik pukul adalah...", a: ["Gendang", "Gitar", "Suling"], c: 0 },
+        { mapel: "PJOK", q: "Sebelum melakukan olahraga, kita sebaiknya melakukan...", a: ["Pemanasan", "Pendinginan", "Tidur"], c: 0 },
+        { mapel: "Muatan Lokal Bahasa Daerah", q: "Narai kabar? Arti dari kalimat bahasa Dayak Ngaju tersebut adalah...", a: ["Mau kemana?", "Apa kabar?", "Sudah makan?"], c: 1 }
+    ];
+
+    let dataSiswa = {};
+    let soalAktif = [];
+    let indeksSoal = 0;
+    let jawabanSiswa = {};
+    let ujianMulai = false;
+
+    function mulaiUjian() {
+        const nama = document.getElementById('siswaNama').value;
+        const kelas = document.getElementById('siswaKelas').value;
+        const sem = document.getElementById('ujianSemester').value;
+
+        if(!nama.trim()) { alert("Nama siswa tidak boleh kosong!"); return; }
+
+        dataSiswa = { nama, kelas, sem };
+        
+        // Filter soal: Jika kelas 1 atau 2, hilangkan soal IPAS
+        soalAktif = bankSoal.filter(soal => {
+            if(soal.khususKelas3 && parseInt(kelas) < 3) return false;
+            return true;
+        });
+
+        document.getElementById('loginPage').style.display = 'none';
+        document.getElementById('examPage').style.display = 'block';
+        document.getElementById('infoSiswaUjian').innerText = `Siswa: ${nama} | Kelas: ${kelas} | Semester: ${sem}`;
+        
+        ujianMulai = true;
+        tampilkanSoal();
+    }
+
+    function tampilkanSoal() {
+        if(indeksSoal >= soalAktif.length) {
+            selesaiUjian();
+            return;
+        }
+
+        const soal = soalAktif[indeksSoal];
+        document.getElementById('questionText').innerHTML = `<small style='color:var(--secondary); font-weight:bold;'>[${soal.mapel}]</small><br>${indeksSoal + 1}. ${soal.q}`;
+        
+        const containerOpsi = document.getElementById('optionsContainer');
+        containerOpsi.innerHTML = '';
+
+        soal.a.forEach((opsi, i) => {
+            const btn = document.createElement('button');
+            btn.className = `option-btn ${jawabanSiswa[indeksSoal] === i ? 'selected' : ''}`;
+            btn.innerText = opsi;
+            btn.onclick = () => { jawabanSiswa[indeksSoal] = i; tampilkanSoal(); };
+            containerOpsi.appendChild(btn);
+        });
+    }
+
+    function nextQuestion() {
+        if(jawabanSiswa[indeksSoal] === undefined) {
+            alert("Pilih salah satu jawaban terlebih dahulu!");
+            return;
+        }
+        indeksSoal++;
+        tampilkanSoal();
+    }
+
+    function selesaiUjian() {
+        ujianMulai = false;
+        document.getElementById('examPage').style.display = 'none';
+        
+        // Isi lembar cetak hasil
+        document.getElementById('lblNama').innerText = dataSiswa.nama;
+        document.getElementById('lblKelas').innerText = dataSiswa.kelas;
+        document.getElementById('lblSem').innerText = dataSiswa.sem;
+
+        const tbody = document.getElementById('resultTableBody');
+        tbody.innerHTML = '';
+
+        // Hitung nilai per mapel (di simulasi ini 1 mapel = 1 soal, nilai 100 jika benar)
+        soalAktif.forEach((soal, i) => {
+            const nilai = jawabanSiswa[i] === soal.c ? 100 : 0;
+            const status = nilai >= 70 ? "<span style='color:green;font-weight:bold;'>Tuntas</span>" : "<span style='color:red;font-weight:bold;'>Remedial</span>";
+            
+            const tr = `<tr>
+                <td>${soal.mapel}</td>
+                <td>${nilai}</td>
+                <td>${status}</td>
+            </tr>`;
+            tbody.innerHTML += tr;
+        });
+
+        // Tampilkan halaman cetak
+        document.getElementById('resultPage').style.display = 'block';
+    }
+
+    // FITUR KEAMANAN: ANTI-MINIMIZE & CURANG
+    window.addEventListener('blur', () => {
+        if(!ujianMulai) return;
+
+        document.getElementById('penaltyNotice').style.display = 'block';
+        
+        // Penalti: Hapus 2 jawaban ke belakang
+        let terhapus = 0;
+        for (let i = indeksSoal; i >= 0; i--) {
+            if (jawabanSiswa[i] !== undefined && terhapus < 2) {
+                delete jawabanSiswa[i];
+                terhapus++;
+            }
+        }
+        
+        // Mundurkan posisi soal agar siswa mengulang soal yang terhapus jwabannya
+        indeksSoal = Math.max(0, indeksSoal - terhapus);
+        tampilkanSoal();
+
+        // Hilangkan notifikasi penalti setelah 4 detik
+        setTimeout(() => {
+            document.getElementById('penaltyNotice').style.display = 'none';
+        }, 4000);
+    });
+</script>
+</body>
+</html>
